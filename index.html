@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบจัดการหลังบ้าน Monali</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        pink: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            200: '#fbcfe8',
+                            300: '#f9a8d4',
+                            400: '#f472b6',
+                            500: '#ec4899',
+                        }
+                    },
+                    boxShadow: {
+                        'cute': '0 4px 14px 0 rgba(236, 72, 153, 0.1)',
+                        'soft': '0 2px 10px 0 rgba(0, 0, 0, 0.03)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #fffbfc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdf2f8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fbcfe8; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f9a8d4; 
+        }
+        
+        .modal-active {
+            overflow: hidden;
+        }
+        
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-enter {
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .toast-exit {
+            animation: fadeOut 0.3s ease forwards;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-700 min-h-screen pb-20">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-pink-50 shadow-soft">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="relative group cursor-pointer shrink-0" onclick="document.getElementById('logoInput').click()" title="เปลี่ยนโลโก้ร้าน">
+                        <img id="storeLogo" src="https://placehold.co/100x100/fce7f3/ec4899?text=Logo" alt="Logo" class="w-11 h-11 rounded-2xl object-cover shadow-cute border-2 border-pink-100">
+                        <div class="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-camera text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="logoInput" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                    <span class="font-bold text-base sm:text-xl text-gray-800 tracking-tight">ระบบจัดการหลังบ้าน <span class="text-pink-500">Monali</span></span>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button onclick="openSettingsModal()" class="w-10 h-10 rounded-2xl bg-white border border-gray-100 text-gray-400 hover:text-pink-500 hover:border-pink-200 hover:bg-pink-50 transition-all flex items-center justify-center shadow-soft shrink-0">
+                        <i class="fa-solid fa-bell"></i>
+                    </button>
+                    <button onclick="openAddAccountModal()" class="bg-pink-400 hover:bg-pink-500 text-white px-4 sm:px-5 py-2.5 rounded-2xl text-sm font-medium transition-all shadow-cute hover:-translate-y-0.5 flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">เพิ่มบัญชีใหม่</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- แบนเนอร์ -->
+        <div class="mb-6 relative group rounded-3xl overflow-hidden shadow-soft border border-pink-50 cursor-pointer" onclick="document.getElementById('bannerInput').click()" title="เปลี่ยนแบนเนอร์">
+            <img id="storeBanner" src="https://placehold.co/800x200/fce7f3/ec4899?text=Welcome+to+Monali" alt="Banner" class="w-full h-32 sm:h-48 object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <i class="fa-solid fa-camera text-white text-3xl mb-2"></i>
+                <span class="text-white font-medium shadow-sm">คลิกเพื่อเปลี่ยนแบนเนอร์</span>
+            </div>
+            <input type="file" id="bannerInput" accept="image/*" class="hidden" onchange="handleBannerUpload(event)">
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-5 rounded-3xl border border-pink-50 shadow-soft flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-pink-50 flex items-center justify-center text-pink-400 text-xl">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-medium mb-0.5">บัญชีทั้งหมด</p>
+                    <p class="text-2xl font-bold text-gray-800" id="statTotalAccounts">0</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-5 rounded-3xl border border-pink-50 shadow-soft flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-400 text-xl">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-medium mb-0.5">ขายแล้ว</p>
+                    <p class="text-2xl font-bold text-gray-800" id="statSoldScreens">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-3xl border border-pink-50 shadow-soft flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 text-xl">
+                    <i class="fa-regular fa-circle"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-medium mb-0.5">จอว่าง</p>
+                    <p class="text-2xl font-bold text-gray-800" id="statAvailScreens">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-3xl border border-pink-50 shadow-soft flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-400 text-xl">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 font-medium mb-0.5">เตะคืนนี้</p>
+                    <p class="text-2xl font-bold text-gray-800" id="statKickScreens">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="accountsList" class="space-y-6">
+            <!-- ข้อมูลบัญชีจะถูกสร้างที่นี่โดย JavaScript -->
+        </div>
+        
+        <!-- กรณีไม่มีข้อมูล -->
+        <div id="emptyState" class="hidden text-center py-16">
+            <div class="w-24 h-24 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-300 text-4xl">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-800">ยังไม่มีบัญชีในระบบ</h3>
+            <p class="text-gray-400 text-sm mt-1 mb-6">เริ่มเพิ่มบัญชีแรกของคุณเพื่อจัดการจอได้เลยค่ะ</p>
+            <button onclick="openAddAccountModal()" class="text-pink-500 font-medium hover:bg-pink-50 px-4 py-2 rounded-xl transition-colors">
+                + เพิ่มบัญชีใหม่
+            </button>
+        </div>
+
+    </main>
+
+    <div id="addAccountModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 modal-content overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+                <h3 class="text-xl font-bold text-gray-800">✨ เพิ่มบัญชีใหม่</h3>
+                <button onclick="closeAddAccountModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto">
+                <form id="addAccountForm" onsubmit="handleAddAccount(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">ชื่ออ้างอิงบัญชี (ให้จำง่าย)</label>
+                        <input type="text" id="accountName" required class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="เช่น ร้านหลัก Profile 1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">อีเมล (Email)</label>
+                        <input type="email" id="accountEmail" required class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="example@gmail.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">รหัสผ่าน (Password)</label>
+                        <input type="text" id="accountPassword" required class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="รหัสผ่านเข้า Netflix">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-8 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeAddAccountModal()" class="px-6 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button type="submit" form="addAccountForm" class="px-6 py-3 rounded-2xl text-sm font-medium text-white bg-pink-400 hover:bg-pink-500 shadow-cute transition-colors">บันทึกบัญชี</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editScreenModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center sm:p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-t-[2rem] sm:rounded-[2rem] w-full max-w-md shadow-2xl transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300 modal-content flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-bold text-gray-800">จัดการข้อมูลจอ <span id="editScreenTitle" class="text-pink-500"></span></h3>
+                <button onclick="closeEditScreenModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto">
+                <form id="editScreenForm" onsubmit="handleEditScreen(event)" class="space-y-6">
+                    <input type="hidden" id="editAccountId">
+                    <input type="hidden" id="editScreenIndex">
+                    
+                    <!-- สถานะ -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-3">สถานะจอ</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="screenStatus" value="available" class="peer sr-only" onchange="toggleCustomerFields()">
+                                <div class="text-center p-3 rounded-2xl border-2 border-gray-100 bg-white text-gray-500 peer-checked:border-gray-400 peer-checked:bg-gray-50 peer-checked:text-gray-800 transition-all">
+                                    <i class="fa-regular fa-heart mb-1 text-lg"></i>
+                                    <div class="text-xs font-medium">ว่าง</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="screenStatus" value="sold" class="peer sr-only" onchange="toggleCustomerFields()">
+                                <div class="text-center p-3 rounded-2xl border-2 border-gray-100 bg-white text-gray-500 peer-checked:border-pink-400 peer-checked:bg-pink-50 peer-checked:text-pink-600 transition-all">
+                                    <i class="fa-solid fa-heart mb-1 text-lg text-pink-400"></i>
+                                    <div class="text-xs font-medium">ขายแล้ว</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="screenStatus" value="kick" class="peer sr-only" onchange="toggleCustomerFields()">
+                                <div class="text-center p-3 rounded-2xl border-2 border-gray-100 bg-white text-gray-500 peer-checked:border-orange-400 peer-checked:bg-orange-50 peer-checked:text-orange-600 transition-all">
+                                    <i class="fa-solid fa-star mb-1 text-lg text-orange-400"></i>
+                                    <div class="text-xs font-medium">เตะคืนนี้</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- ข้อมูลเพิ่มเติมเมื่อมีการใช้งานจอ -->
+                    <div id="customerFields" class="space-y-5 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1.5">รหัส PIN (ถ้ามี)</label>
+                            <input type="text" id="screenPin" class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="ตัวเลข 4 หลัก">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1.5">วันหมดอายุ</label>
+                            <input type="date" id="expireDate" class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1.5">หมายเหตุเพิ่มเติม</label>
+                            <textarea id="screenNotes" rows="2" class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="เช่น โอนกสิกร, ต่ออายุเดือนหน้า..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-8 py-5 bg-gray-50 flex flex-col shrink-0 rounded-b-t-[2rem] sm:rounded-b-[2rem]">
+                <button type="submit" form="editScreenForm" class="w-full rounded-2xl bg-pink-400 px-4 py-3.5 text-sm font-semibold text-white shadow-cute hover:bg-pink-500 hover:-translate-y-0.5 transition-all text-center">
+                    บันทึกข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 modal-content">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800"><i class="fa-brands fa-telegram text-blue-500 mr-2"></i> ตั้งค่าแจ้งเตือน</h3>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-8">
+                <form id="settingsForm" onsubmit="saveTelegramSettings(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Telegram Bot Token</label>
+                        <input type="text" id="tgToken" class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">Telegram Chat ID</label>
+                        <input type="text" id="tgChatId" class="w-full rounded-2xl border-gray-200 bg-gray-50 px-5 py-3.5 text-gray-800 focus:bg-white border-2 focus:border-pink-300 focus:ring-0 transition-colors" placeholder="-100123456789">
+                    </div>
+                    
+                    <div id="testResult" class="text-sm text-center hidden rounded-xl py-2 px-3 bg-gray-50"></div>
+
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button type="button" onclick="testTelegramSettings(this)" class="w-full py-3 rounded-2xl text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100">
+                            <i class="fa-solid fa-paper-plane mr-1.5"></i> ทดสอบส่งข้อความ
+                        </button>
+                        <button type="submit" class="w-full py-3 rounded-2xl text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 transition-colors shadow-soft">
+                            บันทึกการตั้งค่า
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300 modal-content p-6 text-center">
+            <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">ลบบัญชีนี้ใช่หรือไม่?</h3>
+            <p class="text-sm text-gray-500 mb-6">ข้อมูลจอทั้งหมดในบัญชีนี้จะถูกลบและไม่สามารถกู้คืนได้</p>
+            
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-2xl text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors">ยกเลิก</button>
+                <button onclick="executeDeleteAccount()" class="flex-1 py-3 rounded-2xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 shadow-soft transition-colors">ลบบัญชี</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+    <script>
+        // State variables
+        let accounts = [];
+        let telegramSettings = { token: '', chatId: '' };
+        let collapsedAccounts = new Set();
+        let accountIdToDelete = null;
+
+        // On Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderDashboard();
+        });
+
+        function loadData() {
+            try {
+                // Mock data loading or real localStorage
+                const savedAccounts = localStorage.getItem('netflix_accounts');
+                if (savedAccounts) {
+                    accounts = JSON.parse(savedAccounts);
+                }
+
+                const savedCollapsed = localStorage.getItem('netflix_collapsed');
+                if (savedCollapsed) collapsedAccounts = new Set(JSON.parse(savedCollapsed));
+
+                const savedLogo = localStorage.getItem('monali_logo');
+                if (savedLogo) {
+                    const logoEl = document.getElementById('storeLogo');
+                    if(logoEl) logoEl.src = savedLogo;
+                }
+
+                const savedBanner = localStorage.getItem('monali_banner');
+                if (savedBanner) {
+                    const bannerEl = document.getElementById('storeBanner');
+                    if(bannerEl) bannerEl.src = savedBanner;
+                }
+                
+                const savedTg = localStorage.getItem('netflix_tg_settings');
+                if (savedTg) {
+                    telegramSettings = JSON.parse(savedTg);
+                }
+            } catch (error) {
+                console.error("Error loading data:", error);
+                accounts = [];
+            }
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 200; // บีบอัดความกว้างสูงสุด
+                    const MAX_HEIGHT = 200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    localStorage.setItem('monali_logo', compressedBase64);
+                    const logoEl = document.getElementById('storeLogo');
+                    if(logoEl) logoEl.src = compressedBase64;
+                    showToast('อัปเดตโลโก้ร้านเรียบร้อยแล้ว ✨');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            // รีเซ็ตค่า input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+            event.target.value = '';
+        }
+
+        function handleBannerUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1200; // บีบอัดความกว้างสูงสุดสำหรับแบนเนอร์
+                    const MAX_HEIGHT = 600;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    localStorage.setItem('monali_banner', compressedBase64);
+                    const bannerEl = document.getElementById('storeBanner');
+                    if(bannerEl) bannerEl.src = compressedBase64;
+                    showToast('อัปเดตแบนเนอร์เรียบร้อยแล้ว ✨');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            event.target.value = '';
+        }
+
+        function saveData() {
+            localStorage.setItem('netflix_accounts', JSON.stringify(accounts));
+            localStorage.setItem('netflix_collapsed', JSON.stringify([...collapsedAccounts]));
+        }
+
+        function renderDashboard() {
+            const listContainer = document.getElementById('accountsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            // Statistics
+            let totalScreens = accounts.length * 5;
+            let soldCount = 0;
+            let availCount = 0;
+            let kickCount = 0;
+
+            if (accounts.length === 0) {
+                listContainer.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                let html = '';
+                
+                accounts.forEach(account => {
+                    // Update stats
+                    account.screens.forEach(s => {
+                        if (s.status === 'sold') soldCount++;
+                        else if (s.status === 'kick') kickCount++;
+                        else availCount++;
+                    });
+
+                    // Build Account Card
+                    const isCollapsed = collapsedAccounts.has(account.id);
+                    const containerClass = isCollapsed ? 'space-y-3 hidden' : 'space-y-3';
+                    const iconClass = isCollapsed ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+
+                    html += `
+                    <div class="bg-white rounded-[2rem] p-5 sm:p-7 shadow-soft border border-pink-50 hover:shadow-cute transition-shadow">
+                        <!-- Header -->
+                        <div class="flex justify-between items-start mb-5 gap-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-gray-800 truncate">${escapeHTML(account.name)}</h3>
+                                <div class="flex flex-wrap items-center gap-y-1 gap-x-3 mt-1.5 text-xs sm:text-sm text-gray-500">
+                                    <span class="flex items-center gap-1.5 cursor-pointer hover:text-pink-500 transition-colors truncate max-w-[140px] sm:max-w-full" onclick="copyText('${escapeHTML(account.email)}')">
+                                        <i class="fa-regular fa-envelope shrink-0"></i> <span class="truncate">${escapeHTML(account.email)}</span>
+                                    </span>
+                                    <span class="text-gray-300 hidden sm:inline shrink-0">|</span>
+                                    <span class="flex items-center gap-1.5 cursor-pointer hover:text-pink-500 transition-colors truncate max-w-[100px] sm:max-w-full" onclick="copyText('${escapeHTML(account.password)}')">
+                                        <i class="fa-solid fa-key shrink-0"></i> <span class="truncate">${escapeHTML(account.password)}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0 bg-gray-50 rounded-full p-1 border border-gray-100">
+                                <button onclick="toggleScreens('${account.id}')" class="text-gray-400 hover:text-pink-500 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm" title="ย่อ/ขยายจอ">
+                                    <i id="icon-toggle-${account.id}" class="${iconClass}"></i>
+                                </button>
+                                <button onclick="confirmDeleteAccount('${account.id}')" class="text-gray-400 hover:text-red-500 hover:bg-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm" title="ลบบัญชี">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Screens List -->
+                        <div id="screens-container-${account.id}" class="${containerClass}">
+                            <div class="flex flex-col gap-2">
+                    `;
+
+                    // Build 5 Screens
+                    account.screens.forEach((screen, index) => {
+                        let statusConfig = getStatusConfig(screen.status);
+                        
+                        let detailsHtml = '';
+                        if (screen.status !== 'available') {
+                            detailsHtml = `
+                                <div class="flex items-center gap-3 text-[11px] sm:text-xs text-gray-500 mt-1 truncate">
+                                    ${screen.pin ? `<span class="flex items-center gap-1 shrink-0"><i class="fa-solid fa-lock text-gray-400"></i> PIN: <span class="font-medium text-gray-700">${screen.pin}</span></span>` : ''}
+                                    ${screen.expireDate ? `<span class="flex items-center gap-1 shrink-0"><i class="fa-regular fa-calendar text-gray-400"></i> หมด: ${formatDate(screen.expireDate)}</span>` : ''}
+                                    ${screen.notes ? `<span class="truncate max-w-[120px] sm:max-w-[200px] text-gray-400 italic">" ${escapeHTML(screen.notes)} "</span>` : ''}
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                                <div class="group flex items-center justify-between p-3 sm:p-4 rounded-2xl border ${statusConfig.borderClass} ${statusConfig.bgClass} transition-all">
+                                    <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl ${statusConfig.iconBg} flex items-center justify-center ${statusConfig.textClass} shrink-0 shadow-sm border ${statusConfig.borderClass}">
+                                            <i class="${statusConfig.icon} text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="text-sm font-bold text-gray-800">จอ ${index + 1}</h4>
+                                                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${statusConfig.badgeClass}">${statusConfig.label}</span>
+                                            </div>
+                                            ${detailsHtml}
+                                        </div>
+                                    </div>
+                                    <button onclick="openEditScreenModal('${account.id}', ${index})" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-pink-500 hover:border-pink-300 flex items-center justify-center transition-colors shrink-0 shadow-sm ml-2">
+                                        <i class="fa-solid fa-pen text-xs"></i>
+                                    </button>
+                                </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                
+                listContainer.innerHTML = html;
+            }
+
+            // Update DOM stats
+            document.getElementById('statTotalAccounts').textContent = accounts.length;
+            document.getElementById('statSoldScreens').textContent = soldCount;
+            document.getElementById('statAvailScreens').textContent = availCount;
+            document.getElementById('statKickScreens').textContent = kickCount;
+        }
+
+        function getStatusConfig(status) {
+            switch(status) {
+                case 'sold':
+                    return {
+                        label: 'ขายแล้ว',
+                        icon: 'fa-solid fa-heart',
+                        iconBg: 'bg-white',
+                        textClass: 'text-pink-500',
+                        bgClass: 'bg-pink-50/30',
+                        borderClass: 'border-pink-100',
+                        badgeClass: 'bg-pink-100 text-pink-600'
+                    };
+                case 'kick':
+                    return {
+                        label: 'เตะคืนนี้',
+                        icon: 'fa-solid fa-star',
+                        iconBg: 'bg-white',
+                        textClass: 'text-orange-400',
+                        bgClass: 'bg-orange-50/30',
+                        borderClass: 'border-orange-100',
+                        badgeClass: 'bg-orange-100 text-orange-600'
+                    };
+                default:
+                    return {
+                        label: 'ว่าง',
+                        icon: 'fa-regular fa-heart',
+                        iconBg: 'bg-white',
+                        textClass: 'text-gray-400',
+                        bgClass: 'bg-gray-50/50',
+                        borderClass: 'border-gray-100',
+                        badgeClass: 'bg-gray-200 text-gray-600'
+                    };
+            }
+        }
+
+        function toggleScreens(accountId) {
+            const container = document.getElementById(`screens-container-${accountId}`);
+            const icon = document.getElementById(`icon-toggle-${accountId}`);
+            
+            if (collapsedAccounts.has(accountId)) {
+                collapsedAccounts.delete(accountId);
+                container.classList.remove('hidden');
+                icon.className = 'fa-solid fa-chevron-up';
+            } else {
+                collapsedAccounts.add(accountId);
+                container.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-down';
+            }
+            saveData();
+        }
+
+        function animateModalOpen(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-active');
+            
+            // Trigger reflow
+            void modal.offsetWidth;
+            
+            modal.classList.remove('opacity-0');
+            const content = modal.querySelector('.modal-content');
+            if (content) {
+                content.classList.remove('scale-95', 'translate-y-full');
+            }
+        }
+
+        function animateModalClose(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('opacity-0');
+            const content = modal.querySelector('.modal-content');
+            if (content) {
+                if (window.innerWidth < 640 && modalId === 'editScreenModal') {
+                    content.classList.add('translate-y-full');
+                } else {
+                    content.classList.add('scale-95');
+                }
+            }
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-active');
+            }, 300); // Match transition duration
+        }
+
+        function openAddAccountModal() {
+            document.getElementById('addAccountForm').reset();
+            animateModalOpen('addAccountModal');
+        }
+
+        function closeAddAccountModal() {
+            animateModalClose('addAccountModal');
+        }
+
+        async function handleAddAccount(e) {
+            e.preventDefault();
+            const btn = document.querySelector('button[form="addAccountForm"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            const defaultScreens = Array(5).fill().map(() => ({
+                status: 'available', expireDate: '', pin: '', notes: ''
+            }));
+            
+            const newAccount = {
+                id: 'acc_' + Date.now(),
+                name: document.getElementById('accountName').value.trim(),
+                email: document.getElementById('accountEmail').value.trim(),
+                password: document.getElementById('accountPassword').value.trim(),
+                screens: defaultScreens
+            };
+            
+            accounts.unshift(newAccount);
+            saveData();
+            renderDashboard();
+            closeAddAccountModal();
+            showToast('เพิ่มบัญชีใหม่เรียบร้อยแล้วค่ะ ✨');
+            
+            // แจ้งเตือน Telegram
+            notifyNewAccount(newAccount);
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        function openEditScreenModal(accountId, screenIndex) {
+            const account = accounts.find(a => a.id === accountId);
+            if (!account) return;
+            const screen = account.screens[screenIndex];
+
+            document.getElementById('editAccountId').value = accountId;
+            document.getElementById('editScreenIndex').value = screenIndex;
+            document.getElementById('editScreenTitle').textContent = `${indexToNumber(screenIndex)} (${account.name})`;
+
+            // Set radio button
+            const radios = document.getElementsByName('screenStatus');
+            for(let i=0; i<radios.length; i++) {
+                if(radios[i].value === screen.status) {
+                    radios[i].checked = true;
+                    break;
+                }
+            }
+
+            // Set fields
+            document.getElementById('expireDate').value = screen.expireDate || '';
+            document.getElementById('screenPin').value = screen.pin || '';
+            document.getElementById('screenNotes').value = screen.notes || '';
+
+            toggleCustomerFields();
+            animateModalOpen('editScreenModal');
+        }
+
+        function closeEditScreenModal() {
+            animateModalClose('editScreenModal');
+        }
+
+        function toggleCustomerFields() {
+            const statusNode = document.querySelector('input[name="screenStatus"]:checked');
+            if (!statusNode) return;
+            
+            const status = statusNode.value;
+            const fields = document.getElementById('customerFields');
+            
+            if (status === 'available') {
+                fields.classList.add('hidden');
+            } else {
+                fields.classList.remove('hidden');
+            }
+        }
+
+        async function handleEditScreen(e) {
+            e.preventDefault();
+            const btn = document.querySelector('button[form="editScreenForm"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            const accountId = document.getElementById('editAccountId').value;
+            const screenIndex = parseInt(document.getElementById('editScreenIndex').value);
+            const account = accounts.find(a => a.id === accountId);
+            
+            if (!account) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            const status = document.querySelector('input[name="screenStatus"]:checked').value;
+            
+            if (status === 'available') {
+                account.screens[screenIndex] = { status: 'available', expireDate: '', pin: '', notes: '' };
+            } else {
+                account.screens[screenIndex] = {
+                    status: status,
+                    expireDate: document.getElementById('expireDate').value,
+                    pin: document.getElementById('screenPin').value,
+                    notes: document.getElementById('screenNotes').value
+                };
+            }
+            
+            saveData();
+            renderDashboard();
+            closeEditScreenModal();
+            showToast('บันทึกข้อมูลจอเรียบร้อยแล้วค่ะ 💖');
+            
+            // แจ้งเตือนเข้า Telegram อัตโนมัติแบบไม่รอเพื่อไม่ให้หน่วงหน้าเว็บ
+            sendTelegramNotification(accountId, screenIndex);
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        function confirmDeleteAccount(accountId) {
+            accountIdToDelete = accountId;
+            animateModalOpen('deleteConfirmModal');
+        }
+
+        function closeDeleteModal() {
+            accountIdToDelete = null;
+            animateModalClose('deleteConfirmModal');
+        }
+
+        function executeDeleteAccount() {
+            if (!accountIdToDelete) return;
+            
+            accounts = accounts.filter(a => a.id !== accountIdToDelete);
+            collapsedAccounts.delete(accountIdToDelete);
+            
+            saveData();
+            renderDashboard();
+            closeDeleteModal();
+            showToast('ลบบัญชีเรียบร้อยแล้วค่ะ 🗑️');
+        }
+
+        function openSettingsModal() {
+            document.getElementById('tgToken').value = telegramSettings.token || '';
+            document.getElementById('tgChatId').value = telegramSettings.chatId || '';
+            document.getElementById('testResult').classList.add('hidden');
+            animateModalOpen('settingsModal');
+        }
+
+        function closeSettingsModal() {
+            animateModalClose('settingsModal');
+        }
+
+        function saveTelegramSettings(e) {
+            e.preventDefault();
+            telegramSettings.token = document.getElementById('tgToken').value.trim();
+            telegramSettings.chatId = document.getElementById('tgChatId').value.trim();
+            localStorage.setItem('netflix_tg_settings', JSON.stringify(telegramSettings));
+            closeSettingsModal();
+            showToast('บันทึกการตั้งค่า Telegram แล้ว 🔔');
+        }
+
+        async function sendTelegramMessage(text) {
+            if (!telegramSettings.token || !telegramSettings.chatId) {
+                return { success: false, error: 'ยังไม่ได้ตั้งค่า Telegram Token และ Chat ID' };
+            }
+            
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${telegramSettings.token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: telegramSettings.chatId,
+                        text: text,
+                        parse_mode: 'HTML'
+                    })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    return { success: true };
+                } else {
+                    return { success: false, error: data.description };
+                }
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testTelegramSettings(btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> กำลังส่ง...';
+            btn.disabled = true;
+
+            const tempToken = document.getElementById('tgToken').value.trim();
+            const tempChatId = document.getElementById('tgChatId').value.trim();
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.classList.remove('hidden');
+
+            if (!tempToken || !tempChatId) {
+                resultDiv.textContent = 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนทดสอบ';
+                resultDiv.className = 'text-sm text-center py-2 px-3 rounded-xl mt-3 font-medium text-red-600 bg-red-50';
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            // Temporary override for testing without saving
+            const oldToken = telegramSettings.token;
+            const oldChatId = telegramSettings.chatId;
+            telegramSettings.token = tempToken;
+            telegramSettings.chatId = tempChatId;
+
+            const result = await sendTelegramMessage('👋 <b>ทดสอบระบบแจ้งเตือน</b>\nระบบสามารถเชื่อมต่อกับ Telegram ได้สำเร็จ! ✨');
+            
+            if (result.success) {
+                resultDiv.innerHTML = '<i class="fa-solid fa-check-circle mr-1"></i> ส่งข้อความสำเร็จ! ตรวจสอบใน Telegram ได้เลย';
+                resultDiv.className = 'text-sm text-center py-2 px-3 rounded-xl mt-3 font-medium text-green-600 bg-green-50 border border-green-100';
+            } else {
+                resultDiv.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> ส่งไม่สำเร็จ: ' + result.error;
+                resultDiv.className = 'text-sm text-center py-2 px-3 rounded-xl mt-3 font-medium text-red-600 bg-red-50 border border-red-100';
+                // Revert if failed
+                telegramSettings.token = oldToken;
+                telegramSettings.chatId = oldChatId;
+            }
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        async function notifyNewAccount(account) {
+            if (!telegramSettings.token || !telegramSettings.chatId) return;
+            
+            let message = `✨ <b>เพิ่มบัญชีใหม่</b>\n\n`;
+            message += `<b>ชื่อบัญชี:</b> <code>${account.name}</code>\n`;
+            message += `<b>อีเมล:</b> <code>${account.email}</code>\n`;
+            message += `<b>รหัสผ่าน:</b> <code>${account.password}</code>\n`;
+            
+            await sendTelegramMessage(message);
+        }
+
+        async function sendTelegramNotification(accountId, screenIndex) {
+            if (!telegramSettings.token || !telegramSettings.chatId) return;
+            
+            const account = accounts.find(a => a.id === accountId);
+            if (!account) return;
+            const screen = account.screens[screenIndex];
+            const statusVal = screen.status;
+            
+            let statusText = statusVal === 'sold' ? '✅ ขายแล้ว' : (statusVal === 'kick' ? '⭐️ เตะคืนนี้' : '⚪️ ว่าง');
+            let message = `📋 <b>อัปเดตข้อมูลจอ</b>\n\n`;
+            message += `<b>บัญชี:</b> <code>${account.name}</code>\n`;
+            message += `<b>อีเมล:</b> <code>${account.email}</code>\n`;
+            message += `<b>รหัสผ่าน:</b> <code>${account.password}</code>\n`;
+            message += `┈┈┈┈┈┈┈┈┈┈┈┈\n`;
+            message += `📺 <b>จอที่: ${screenIndex + 1}</b>\n`;
+            message += `📝 <b>สถานะ:</b> ${statusText}\n`;
+            
+            if (screen.pin) message += `🔐 <b>PIN:</b> <code>${screen.pin}</code>\n`;
+            if (screen.expireDate) message += `📅 <b>หมดอายุ:</b> ${formatDate(screen.expireDate)}\n`;
+            if (screen.notes) message += `💬 <b>หมายเหตุ:</b> ${escapeHTML(screen.notes)}\n`;
+
+            await sendTelegramMessage(message);
+        }
+
+        function indexToNumber(index) {
+            return `จอ ${index + 1}`;
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('th-TH', options);
+        }
+
+        function copyText(text) {
+            // สร้าง textarea ชั่วคราวเพื่อทำการ copy
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            
+            // เลือกข้อความ
+            el.select();
+            el.setSelectionRange(0, 99999); // สำหรับมือถือ
+            
+            try {
+                document.execCommand('copy');
+                showToast('คัดลอกข้อความแล้ว ✨');
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+            
+            document.body.removeChild(el);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            toast.className = 'bg-white border-2 border-pink-100 text-gray-700 px-5 py-3.5 rounded-2xl shadow-cute flex items-center gap-3 toast-enter pointer-events-auto';
+            toast.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center text-pink-400 shrink-0">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <span class="font-medium text-sm pr-2">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // ลบ toast หลังจาก 3 วินาที
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => {
+                    if(container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300); // รออนิเมชัน exit จบ
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
